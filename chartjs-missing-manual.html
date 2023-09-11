@@ -71,8 +71,19 @@
         <canvas id="myChart6"></canvas>
       </div>
     </div>
+    <div class="chartCard">
+      <div class="chartBox">
+        <canvas id="myChart7"></canvas>
+      </div>
+    </div>
+    <div class="chartCard">
+      <div class="chartBox">
+        <canvas id="myChart8"></canvas>
+      </div>
+    </div>
   
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.0.0/chartjs-plugin-datalabels.min.js" integrity="sha512-R/QOHLpV1Ggq22vfDAWYOaMd5RopHrJNMxi8/lJu8Oihwi4Ho4BRFeiMiCefn9rasajKjnx9/fTQ/xkWnkDACg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script>
     // data block
@@ -363,6 +374,198 @@
       plugins: [doughnutLabel]
     };
 
+    // data block
+    const data7 = {
+      labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange', 'Black', 'Next Color'],
+      datasets: [{
+        label: '# of Votes',
+        //data: [12, 19, 3, 5, 2, 3],
+
+        data: [
+          [12, 19],
+          [19, 3],
+          [3, 5],
+          [5, 2],
+          [2, 3],
+          [3, 9],
+          [9, 15],
+          [15, 10]
+        ],
+        backgroundColor: barBackgroundColorCode(),
+        borderColor: barColorCode(),
+        borderWidth: 1,
+        borderSkipped: false
+      }]
+    };
+
+    // waterfallLines plugin
+    const waterfallLines = {
+      id: 'waterfall',
+      beforeDraw(chart, args, options) {
+        const { ctx, config, scales: {x, y} } = chart;
+
+        ctx.save();
+        ctx.strokeStyle = options.lineColor;
+        ctx.setLineDash([options.linestyle1, options.linestyle2]);
+        for(let i = 0; i < config._config.data.datasets[0].data.length -1; i++){
+          ctx.strokeRect(x.getPixelForValue(i), y.getPixelForValue(config._config.data.datasets[0].data[i][1]), x.getPixelForValue(0.5), 0);
+        };
+
+      }
+    }
+
+    // config block
+    const config7 = {
+      type: 'bar',
+      data: data7,
+      options: {
+        plugins: {
+          datalabels: {
+            formatter: (value) => {
+              console.log(value);
+              const votes = value[1] - value[0];
+              const netVotes = Math.abs(votes)
+              return `Votes: ${netVotes}`;
+            }
+          },
+          waterfall: {
+            lineColor: 'black',
+            linestyle1: 5,
+            linestyle2: 5
+          },
+          tooltip: {
+            enabled: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      },
+      plugins: [waterfallLines, ChartDataLabels]
+    };
+
+    // data block
+    const data8 = {
+      labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+      datasets: [{
+        label: 'Red Bar',
+        data: [
+          [0, 12],
+          [0, 19],
+          [0, 3],
+          [0, 5],
+          [0, 2],
+          [0, 3],
+        ],
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 1,
+      },{
+        label: 'Arrow Bar',
+        //data: [12, 19, 3, 5, 2, 3],
+        data: [
+          [12, 19],
+          [19, 3],
+          [3, 5],
+          [5, 2],
+          [2, 3],
+          //[0, 3],
+        ],
+        backgroundColor: 'rgba(0, 0, 0, 1)',
+        borderColor: 'rgba(0, 0, 0, 1)',
+        barPercentage: 0.05
+      }]
+    };
+
+    // barGrowthIndicator plugin
+    const barGrowthIndicator = {
+      id: 'barGrowthIndicator',
+      afterDatasetsDraw(chart, scales, options) {
+        const { ctx, scales: {x, y} } = chart;
+
+        const deltaPercentage = [];
+
+        for(let i = 0; i < chart._metasets[0]._parsed.length -1; i++){
+          let z = 1 + i;
+          const basis = chart._metasets[0]._parsed[i].y;
+          const delta = chart._metasets[0]._parsed[z].y;
+          let percentage = delta / basis * 100;
+          percentage = percentage - 100;
+          deltaPercentage.push(percentage.toFixed(1))
+        }
+
+        console.log(chart._metasets[1].hidden);
+        if(chart._metasets[1].hidden !== true){
+
+          for(let a = 0; a < deltaPercentage.length; a++){
+
+            const start = chart._metasets[1]._parsed[a]._custom.start;
+            const end = chart._metasets[1]._parsed[a]._custom.end;
+
+            if(end >= start) {
+              // triangle
+              ctx.beginPath();
+              ctx.moveTo(chart.getDatasetMeta(1).data[a].x, chart.getDatasetMeta(1).data[a].y - 2)
+              ctx.lineTo(chart.getDatasetMeta(1).data[a].x - 5, chart.getDatasetMeta(1).data[a].y + 5);
+              ctx.lineTo(chart.getDatasetMeta(1).data[a].x + 5, chart.getDatasetMeta(1).data[a].y + 5);
+              ctx.fillStyle = 'black';
+              ctx.fill();
+              ctx.restore();
+
+              ctx.font = '10px Arial';
+              ctx.fillStyle = 'green';
+              ctx.textAlign = 'center';
+              ctx.fillText(deltaPercentage[a]+'%', chart.getDatasetMeta(1).data[a].x + 2.5, chart.getDatasetMeta(1).data[a].y - 10)
+              ctx.restore();
+            }
+            if(end < start) {
+              let yStart = a + 1;
+              ctx.beginPath();
+              ctx.moveTo(chart.getDatasetMeta(1).data[a].x, chart.getDatasetMeta(0).data[yStart].y + 3);
+              ctx.lineTo(chart.getDatasetMeta(1).data[a].x - 5, chart.getDatasetMeta(0).data[yStart].y - 5);
+              ctx.lineTo(chart.getDatasetMeta(1).data[a].x + 5, chart.getDatasetMeta(0).data[yStart].y - 5);
+              ctx.fillStyle = 'black';
+              ctx.fill();
+              ctx.restore();
+
+              ctx.font = '10px Arial';
+              ctx.fillStyle = 'red';
+              ctx.textAlign = 'center';
+              ctx.fillText(deltaPercentage[a]+'%', chart.getDatasetMeta(1).data[a].x + 2.5, chart.getDatasetMeta(0).data[yStart].y + 12)
+              ctx.restore();
+            }
+          } // forloop end
+        } // if hidden end
+      }
+    };
+
+    // config block
+    const config8 = {
+      type: 'bar',
+      data: data8,
+      options: {
+        plugins: {
+          tooltip: {
+            filter: (tooltipItem) => {
+              //console.log(tooltipItem);
+              return tooltipItem.datasetIndex === 0;
+            }
+          }
+        },
+        scales: {
+          y: {
+            grace: '5%',
+            beginAtZero: true
+          }
+        }
+      },
+      plugins: [barGrowthIndicator]
+    };
+
+    
+
     // init render block
     const myChart = new Chart(
       document.getElementById('myChart'),
@@ -387,6 +590,14 @@
     const myChart6 = new Chart(
       document.getElementById('myChart6'),
       config6
+    );
+    const myChart7 = new Chart(
+      document.getElementById('myChart7'),
+      config7
+    );
+    const myChart8 = new Chart(
+      document.getElementById('myChart8'),
+      config8
     );
 
     
@@ -416,6 +627,40 @@
 
       myChart5.update();
     };
+
+
+    function barColorCode(){
+      return (ctx) => {
+        //console.log(ctx.chart.config.data.datasets[0].data.length)
+        const start = ctx.parsed._custom.start;
+        const end = ctx.parsed._custom.end;
+        let barColor = start <= end ? 'rgba(75, 192, 192, 1)'
+        : start > end ? 'rgba(255, 99, 132, 1)'
+        : 'black';
+
+        if(ctx.dataIndex === 0 || ctx.dataIndex === ctx.chart.config.data.datasets[0].data.length -1){
+          barColor = 'rgba(0, 0, 0, 1)'
+        }
+
+        return barColor;
+      }
+    }
+
+    function barBackgroundColorCode(){
+      return (ctx) => {
+        const start = ctx.parsed._custom.start;
+        const end = ctx.parsed._custom.end;
+        let barColor = start <= end ? 'rgba(75, 192, 192, 0.2)'
+        : start > end ? 'rgba(255, 99, 132, 0.2)'
+        : 'rgba(0, 0, 0, 0.2)';
+
+        if(ctx.dataIndex === 0 || ctx.dataIndex === ctx.chart.config.data.datasets[0].data.length -1){
+          barColor = 'rgba(0, 0, 0, 0.2)'
+        }
+
+        return barColor;
+      }
+    }
     </script>
 
 
